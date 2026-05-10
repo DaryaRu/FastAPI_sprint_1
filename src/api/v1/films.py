@@ -1,33 +1,67 @@
-from http import HTTPStatus
+"""Film endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from http import HTTPStatus
+from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from schemas.film import Film
 from services.film import FilmService, get_film_service
 
 router = APIRouter()
 
 
-class Film(BaseModel):
-    id: str
+class FilmShort(BaseModel):
+    id: UUID
     title: str
+    imdb_rating: Optional[float] = None
 
 
-# Внедряем FilmService с помощью Depends(get_film_service)
+def convert_to_short(films: list[Film]) -> list[FilmShort]:
+    """Convert a list of Film objects to a list of FilmShort objects."""
+    return [
+        FilmShort(id=f.uuid, title=f.title, imdb_rating=f.imdb_rating) for f in films
+    ]
+
+
+@router.get("/search", response_model=list[FilmShort])
+async def films_search(
+    query: str = Query(...),
+    page_number: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=100),
+    film_service: FilmService = Depends(get_film_service),
+) -> list[FilmShort]:
+    """Endpoint to search films by query string."""
+    films = await film_service.search(query, page_number, page_size)
+    return convert_to_short(films)
+
+
 @router.get("/{film_id}", response_model=Film)
 async def film_details(
-    film_id: str, film_service: FilmService = Depends(get_film_service)
+    film_id: UUID,
+    film_service: FilmService = Depends(get_film_service),
 ) -> Film:
-    film = await film_service.get_by_id(film_id)
+    """Endpoint to return full details for a single film by id."""
+    film = await film_service.get_by_id(str(film_id))
     if not film:
-        # Если фильм не найден, отдаём 404 статус
-        # Желательно пользоваться уже определёнными HTTP-статусами, которые содержат enum    # Такой код будет более поддерживаемым
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="film not found")
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="film not found",
+        )
+    return film
 
-    # Перекладываем данные из models.Film в Film
-    # Обратите внимание, что у модели бизнес-логики есть поле description,
-    # которое отсутствует в модели ответа API.
-    # Если бы использовалась общая модель для бизнес-логики и формирования ответов API,
-    # вы бы предоставляли клиентам данные, которые им не нужны
-    # и, возможно, данные, которые опасно возвращать
-    return Film(id=film.id, title=film.title)
+
+@router.get("/", response_model=list[FilmShort])
+async def films_list(
+    sort: Optional[str] = Query(default=None),
+    genre: Optional[UUID] = Query(default=None),
+    page_number: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=100),
+    film_service: FilmService = Depends(get_film_service),
+) -> list[FilmShort]:
+    """Endpoint to return a paginated list of films
+    with sort and genre filter."""
+    films = await film_service.get_list(sort, genre, page_number, page_size)
+    return convert_to_short(films)
