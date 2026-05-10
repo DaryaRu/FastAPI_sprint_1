@@ -1,8 +1,23 @@
-# Используем pydantic для упрощения работы при перегонке данных из json в объекты
+"""Film model."""
+
+from datetime import date
+from typing import Optional
+from uuid import UUID
+
 from pydantic import BaseModel
+
+from schemas.genre import Genre
+from schemas.person import Person
 
 
 class Film(BaseModel):
-    id: str
+    uuid: UUID
     title: str
-    description: str
+    imdb_rating: float | None = None
+    description: Optional[str] = None
+    creation_date: Optional[date] = None
+    directors: list[Person] = []
+    actors: list[Person] = []
+    writers: list[Person] = []
+    genre: list[Genre] = []
+    file_path: Optional[str] = None
