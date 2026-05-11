@@ -4,14 +4,16 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from schemas.genre import Genre
 from schemas.person import Person
 
 
 class Film(BaseModel):
-    uuid: UUID
+    model_config = ConfigDict(populate_by_name=True)
+
+    uuid: UUID = Field(validation_alias="id")
     title: str
     imdb_rating: float | None = None
     description: Optional[str] = None
@@ -19,5 +21,5 @@ class Film(BaseModel):
     directors: list[Person] = []
     actors: list[Person] = []
     writers: list[Person] = []
-    genre: list[Genre] = []
+    genre: list[Genre] = Field(default=[], validation_alias="genres")
     file_path: Optional[str] = None

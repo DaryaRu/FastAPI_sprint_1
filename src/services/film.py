@@ -41,8 +41,8 @@ class FilmService:
         if genre:
             query = {
                 "nested": {
-                    "path": "genre",
-                    "query": {"term": {"genre.uuid": str(genre)}},
+                    "path": "genres",
+                    "query": {"term": {"genres.id": str(genre)}},
                 }
             }
 
