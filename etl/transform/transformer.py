@@ -1,11 +1,11 @@
 """Transforms PostgreSQL into ETL models."""
 
-from models import FilmWork, Person
+from models import FilmWork, Genre, Person
 
 
 def build_film_work(
     row: dict,
-    genres: list[str],
+    genres: list[Genre],
     persons: dict[str, list[Person]],
 ) -> FilmWork:
     """Build a FilmWork document."""
@@ -29,14 +29,14 @@ def build_film_work(
 
 
 def group_genres_by_film(rows: list[dict]) -> dict:
-    """Group genre names by film_work_id."""
+    """Group genres by film_work_id."""
     grouped_genres: dict = {}
     for row in rows:
         film_work_id = row["film_work_id"]
         grouped_genres.setdefault(film_work_id, [])
-        genre_name = row["name"]
-        if genre_name not in grouped_genres[film_work_id]:
-            grouped_genres[film_work_id].append(genre_name)
+        genre = Genre(id=row["id"], name=row["name"])
+        if genre.id not in {g.id for g in grouped_genres[film_work_id]}:
+            grouped_genres[film_work_id].append(genre)
     return grouped_genres
 
 
@@ -61,6 +61,6 @@ def group_persons_by_film(rows: list[dict]) -> dict:
             target_key = "actors"
         else:
             target_key = "writers"
-        if person.id not in {item.id for item in film_persons[target_key]}:
+        if person.id not in {p.id for p in film_persons[target_key]}:
             film_persons[target_key].append(person)
     return grouped_persons
