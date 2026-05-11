@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 class FilmShort(BaseModel):
-    id: UUID
+    uuid: UUID
     title: str
     imdb_rating: Optional[float] = None
 
@@ -22,7 +22,8 @@ class FilmShort(BaseModel):
 def convert_to_short(films: list[Film]) -> list[FilmShort]:
     """Convert a list of Film objects to a list of FilmShort objects."""
     return [
-        FilmShort(id=f.uuid, title=f.title, imdb_rating=f.imdb_rating) for f in films
+        FilmShort(uuid=f.uuid, title=f.title, imdb_rating=f.imdb_rating)
+        for f in films
     ]
 
 
