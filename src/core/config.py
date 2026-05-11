@@ -19,3 +19,7 @@ ELASTIC_PORT = int(os.getenv("ELASTIC_PORT", 9200))
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+ALLOW_HOSTS = os.getenv("ALLOW_HOSTS", "").split(",")
+ORIGINS = os.getenv("ORIGINS", "").split(",")
+CACHE_EXPIRE = int(os.getenv("CACHE_EXPIRE", 600))
