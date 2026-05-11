@@ -5,12 +5,18 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
+class PersonFilm(BaseModel):
+    id: UUID
+    roles: list[str]
+
+
 class Person(BaseModel):
     id: UUID
     name: str
-    
-    
-class Genre(BaseModel):
+    films: list[PersonFilm] = []
+
+
+class FilmPerson(BaseModel):
     id: UUID
     name: str
 
@@ -29,6 +35,6 @@ class FilmWork(BaseModel):
     directors_names: list[str] = Field(default_factory=list)
     actors_names: list[str] = Field(default_factory=list)
     writers_names: list[str] = Field(default_factory=list)
-    directors: list[Person] = Field(default_factory=list)
-    actors: list[Person] = Field(default_factory=list)
-    writers: list[Person] = Field(default_factory=list)
+    directors: list[FilmPerson] = Field(default_factory=list)
+    actors: list[FilmPerson] = Field(default_factory=list)
+    writers: list[FilmPerson] = Field(default_factory=list)

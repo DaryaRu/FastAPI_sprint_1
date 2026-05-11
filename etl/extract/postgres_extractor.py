@@ -8,27 +8,19 @@ from typing import Literal, TypedDict
 from uuid import UUID
 
 import psycopg
-from psycopg.rows import dict_row
-
 from backoff import backoff
 from config import Settings
-from extract.queries import (
-    FILM_WORK_DETAILS,
-    FILM_WORK_GENRES,
-    FILM_WORK_IDS_BY_GENRE,
-    FILM_WORK_IDS_BY_PERSON,
-    FILM_WORK_IDS_BY_SELF,
-    FILM_WORK_PERSONS,
-    GENRE_DETAILS,
-    query_changed_entities,
-)
-from models import FilmWork, Genre
-from transform.transformer import (
-    build_film_work,
-    build_genre,
-    group_genres_by_film,
-    group_persons_by_film,
-)
+from extract.queries import (FILM_WORK_DETAILS, FILM_WORK_GENRES,
+                             FILM_WORK_IDS_BY_GENRE, FILM_WORK_IDS_BY_PERSON,
+                             FILM_WORK_IDS_BY_SELF, FILM_WORK_PERSONS,
+                             GENRE_DETAILS, PERSON_DETAILS,
+                             query_changed_entities)
+from psycopg.rows import dict_row
+from transform.transformer import (build_film_work, build_genre, build_person,
+                                   build_persons_from_rows,
+                                   group_genres_by_film, group_persons_by_film)
+
+from models import FilmWork, Genre, Person
 
 logger = logging.getLogger(__name__)
 
@@ -108,19 +100,13 @@ class PostgresExtractor:
             psycopg.connect(self.settings.postgres_dsn, row_factory=dict_row)
         ) as connection:
             with connection.cursor() as cursor:
-                cursor.execute(
-                    FILM_WORK_DETAILS, {"film_work_ids": film_work_ids}
-                )
+                cursor.execute(FILM_WORK_DETAILS, {"film_work_ids": film_work_ids})
                 film_rows = list(cursor.fetchall())
 
-                cursor.execute(
-                    FILM_WORK_GENRES, {"film_work_ids": film_work_ids}
-                )
+                cursor.execute(FILM_WORK_GENRES, {"film_work_ids": film_work_ids})
                 genre_rows = list(cursor.fetchall())
 
-                cursor.execute(
-                    FILM_WORK_PERSONS, {"film_work_ids": film_work_ids}
-                )
+                cursor.execute(FILM_WORK_PERSONS, {"film_work_ids": film_work_ids})
                 person_rows = list(cursor.fetchall())
 
         genres_by_film = group_genres_by_film(genre_rows)
@@ -137,7 +123,7 @@ class PostgresExtractor:
             for row in film_rows
         ]
         return result
-    
+
     @backoff()
     def fetch_genres(
         self,
@@ -164,6 +150,54 @@ class PostgresExtractor:
 
         return [build_genre(row) for row in rows]
 
+    @backoff()
+    def fetch_persons(
+        self,
+        person_ids: list[UUID],
+    ) -> list[dict]:
+        """Fetch persons data by ids from Postgres."""
+        if not person_ids:
+            return []
+
+        with closing(
+            psycopg.connect(
+                self.settings.postgres_dsn,
+                row_factory=dict_row,
+            )
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    PERSON_DETAILS,
+                    {"person_ids": person_ids},
+                )
+                rows = cursor.fetchall()
+
+        return list(rows)
+
+    def extract_persons(
+        self,
+        checkpoint_state: CheckpointState,
+    ) -> tuple[list[Person], CheckpointState]:
+        """Extract changed persons."""
+        rows = self.fetch_changed_entities(
+            ENTITY_TYPE_PERSON,
+            checkpoint_state,
+        )
+
+        if not rows:
+            return [], checkpoint_state
+
+        person_ids = [row["id"] for row in rows]
+
+        raw_person_rows = self.fetch_persons(person_ids)
+
+        persons = build_persons_from_rows(raw_person_rows)
+
+        checkpoint = build_checkpoint_state(rows[-1])
+        logger.info("Fetched %s persons from PostgreSQL", len(persons))
+
+        return persons, checkpoint
+
     def extract_film_works(
         self, entity_type: EntityType, checkpoint_state: CheckpointState
     ) -> tuple[list[FilmWork], CheckpointState]:
@@ -184,7 +218,7 @@ class PostgresExtractor:
         )
         result = (film_works, checkpoint)
         return result
-    
+
     def extract_genres(
         self,
         checkpoint_state: CheckpointState,
@@ -210,9 +244,7 @@ class PostgresExtractor:
         return genres, checkpoint
 
 
-def iter_batches(
-    items: list[FilmWork], batch_size: int
-) -> Iterator[list[FilmWork]]:
+def iter_batches(items: list[FilmWork], batch_size: int) -> Iterator[list[FilmWork]]:
     """Split items into fixed-size batches."""
 
     for index in range(0, len(items), batch_size):

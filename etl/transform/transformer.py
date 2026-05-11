@@ -1,6 +1,8 @@
 """Transforms PostgreSQL into ETL models."""
 
-from models import FilmWork, Genre, Person
+from uuid import UUID
+
+from models import FilmPerson, FilmWork, Genre, Person
 
 
 def build_film_work(
@@ -26,6 +28,50 @@ def build_film_work(
         writers=writers,
     )
     return result
+
+
+def build_genre(row: dict) -> Genre:
+    return Genre(**row)
+
+
+def build_person(row: dict) -> Person:
+    """Build a single Person document for Pydantic."""
+    return Person(**row)
+
+
+def build_persons_from_rows(rows: list[dict]) -> list[Person]:
+    """Group flat SQL rows by person_id and transform to Pydantic models."""
+    persons_data = {}
+
+    for row in rows:
+        p_id = row["person_id"]
+
+        if p_id not in persons_data:
+            persons_data[p_id] = {
+                "id": p_id if isinstance(p_id, UUID) else UUID(p_id),
+                "name": row["full_name"],
+                "films": [],
+            }
+
+        if row["fw_id"]:
+            role = row["role"]
+            film_id = (
+                row["fw_id"] if isinstance(row["fw_id"], UUID) else UUID(row["fw_id"])
+            )
+
+            existing_film = next(
+                (f for f in persons_data[p_id]["films"] if f["id"] == film_id), None
+            )
+
+            if existing_film:
+                if role and role not in existing_film["roles"]:
+                    existing_film["roles"].append(role)
+            else:
+                persons_data[p_id]["films"].append(
+                    {"id": film_id, "roles": [role] if role else []}
+                )
+
+    return [build_person(data) for data in persons_data.values()]
 
 
 def build_genre(row: dict) -> Genre:
@@ -58,7 +104,10 @@ def group_persons_by_film(rows: list[dict]) -> dict:
             },
         )
         role = row["role"]
-        person = Person(id=row["id"], name=row["full_name"])
+
+        person_id = row["id"] if isinstance(row["id"], UUID) else UUID(row["id"])
+        person = FilmPerson(id=person_id, name=row["full_name"])
+
         if role == "director":
             target_key = "directors"
         elif role == "actor":

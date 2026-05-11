@@ -4,16 +4,12 @@ import logging
 import time
 
 from config import Settings
-from extract.postgres_extractor import (
-    DEFAULT_ID_VALUE,
-    DEFAULT_MODIFIED_VALUE,
-    ENTITY_TYPE_FILM_WORK,
-    ENTITY_TYPE_GENRE,
-    ENTITY_TYPE_PERSON,
-    CheckpointState,
-    PostgresExtractor,
-    iter_batches,
-)
+from extract.postgres_extractor import (DEFAULT_ID_VALUE,
+                                        DEFAULT_MODIFIED_VALUE,
+                                        ENTITY_TYPE_FILM_WORK,
+                                        ENTITY_TYPE_GENRE, ENTITY_TYPE_PERSON,
+                                        CheckpointState, PostgresExtractor,
+                                        iter_batches)
 from load.elastic import ElasticsearchWriter
 from state.state import State
 
@@ -26,6 +22,7 @@ FILM_WORK_STATE_KEYS = {
 }
 
 GENRE_STATE_KEY = "genre_etl:genre_modified"
+PERSON_STATE_KEY = "person_etl:person_modified"
 
 
 class EtlOrchestrator:
@@ -48,7 +45,7 @@ class EtlOrchestrator:
         while True:
             self.run_once()
             time.sleep(self.settings.etl_poll_interval)
-            
+
     def _run_pipeline(
         self,
         *,
@@ -57,9 +54,7 @@ class EtlOrchestrator:
         index: str,
         entity_name: str,
     ) -> None:
-        checkpoint_state = get_checkpoint_state(
-            self.state.get_state(state_key)
-        )
+        checkpoint_state = get_checkpoint_state(self.state.get_state(state_key))
 
         items, next_checkpoint = extract_func(checkpoint_state)
 
@@ -89,12 +84,18 @@ class EtlOrchestrator:
                 index=self.settings.elastic_movies_index,
                 entity_name=entity_type,
             )
-
         self._run_pipeline(
             extract_func=self.extractor.extract_genres,
             state_key=GENRE_STATE_KEY,
             index=self.settings.elastic_genres_index,
             entity_name="genre",
+        )
+
+        self._run_pipeline(
+            extract_func=self.extractor.extract_persons,
+            state_key=PERSON_STATE_KEY,
+            index=self.settings.elastic_persons_index,
+            entity_name="person",
         )
 
 

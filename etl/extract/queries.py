@@ -100,3 +100,15 @@ FROM content.genre
 WHERE id = ANY(%(genre_ids)s)
 ORDER BY id;
 """
+
+# Return person details and their films with roles for person index
+PERSON_DETAILS = """
+SELECT 
+    p.id as person_id,
+    p.full_name,
+    pfw.film_work_id as fw_id,
+    pfw.role
+FROM content.person p
+LEFT JOIN content.person_film_work pfw ON pfw.person_id = p.id
+WHERE p.id = ANY(%(person_ids)s);
+"""
