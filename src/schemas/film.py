@@ -1,4 +1,4 @@
-"""Film model."""
+"""Film model for API."""
 
 from datetime import date
 from typing import Optional
@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from schemas.genre import Genre
+from schemas.genres import GenreBaseSerializer as Genre
 from schemas.person import Person
 
 
