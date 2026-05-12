@@ -1,21 +1,30 @@
+"""Base Elasticsearch repository."""
+
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
 from exceptions import ObjectNotFoundException
 
 
-class BaseElacticRepository:
-    
+class BaseElasticRepository:
     def __init__(self, elastic_client: AsyncElasticsearch, index: str):
         self.elastic_client = elastic_client
         self.index = index
-        
-    async def get_by_id(self, id: str, source: list[str] | None = None,) -> dict:
+
+    async def get_by_id(
+        self,
+        entity_id: str,
+        source: list[str] | None = None,
+    ) -> dict:
         try:
-            doc = await self.elastic_client.get(index=self.index, id=id, source_includes=source)
+            doc = await self.elastic_client.get(
+                index=self.index,
+                id=entity_id,
+                source_includes=source,
+            )
         except NotFoundError as ex:
             raise ObjectNotFoundException from ex
-        return doc['_source']
-    
+        return doc["_source"]
+
     async def get_filtered(
         self,
         page_size: int | None = None,
@@ -41,7 +50,4 @@ class BaseElacticRepository:
             body=body,
         )
 
-        return [
-            hit["_source"]
-            for hit in result["hits"]["hits"]
-        ]
+        return [hit["_source"] for hit in result["hits"]["hits"]]
