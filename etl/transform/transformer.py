@@ -1,6 +1,6 @@
 """Transforms PostgreSQL into ETL models."""
 
-from models import FilmWork, Person
+from models import FilmWork, Genre, Person
 
 
 def build_film_work(
@@ -26,6 +26,10 @@ def build_film_work(
         writers=writers,
     )
     return result
+
+
+def build_genre(row: dict) -> Genre:
+    return Genre(**row)
 
 
 def group_genres_by_film(rows: list[dict]) -> dict:

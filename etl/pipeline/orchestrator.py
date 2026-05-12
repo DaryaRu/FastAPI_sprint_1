@@ -19,11 +19,13 @@ from state.state import State
 
 logger = logging.getLogger(__name__)
 
-ENTITY_TYPES = {
-    ENTITY_TYPE_FILM_WORK: "film_work_modified",
-    ENTITY_TYPE_GENRE: "genre_modified",
-    ENTITY_TYPE_PERSON: "person_modified",
+FILM_WORK_STATE_KEYS = {
+    ENTITY_TYPE_FILM_WORK: "film_work_etl:film_work_modified",
+    ENTITY_TYPE_GENRE: "film_work_etl:genre_modified",
+    ENTITY_TYPE_PERSON: "film_work_etl:person_modified",
 }
+
+GENRE_STATE_KEY = "genre_etl:genre_modified"
 
 
 class EtlOrchestrator:
@@ -46,35 +48,54 @@ class EtlOrchestrator:
         while True:
             self.run_once()
             time.sleep(self.settings.etl_poll_interval)
+            
+    def _run_pipeline(
+        self,
+        *,
+        extract_func,
+        state_key: str,
+        index: str,
+        entity_name: str,
+    ) -> None:
+        checkpoint_state = get_checkpoint_state(
+            self.state.get_state(state_key)
+        )
+
+        items, next_checkpoint = extract_func(checkpoint_state)
+
+        if not items:
+            logger.debug("No modified %s found", entity_name)
+            return
+
+        for batch in iter_batches(items, self.settings.etl_chunk_size):
+            self.writer.bulk_save(index, batch)
+
+        self.state.set_state(state_key, next_checkpoint)
+
+        logger.info(
+            "Checkpoint saved for %s: %s",
+            entity_name,
+            next_checkpoint,
+        )
 
     def run_once(self) -> None:
-        """Run one ETL cycle for all changed entity types."""
-        for entity_type, state_key in ENTITY_TYPES.items():
-            checkpoint_state = get_checkpoint_state(
-                self.state.get_state(state_key)
-            )
-            film_works, next_checkpoint = self.extractor.extract(
-                entity_type, checkpoint_state
-            )
-            if not film_works:
-                logger.debug(
-                    "No modified film works found for entity type %s",
+        for entity_type, state_key in FILM_WORK_STATE_KEYS.items():
+            self._run_pipeline(
+                extract_func=lambda cp: self.extractor.extract_film_works(
                     entity_type,
-                )
-                continue
+                    cp,
+                ),
+                state_key=state_key,
+                index=self.settings.elastic_movies_index,
+                entity_name=entity_type,
+            )
 
-            for batch in iter_batches(
-                film_works, self.settings.etl_chunk_size
-            ):
-                self.writer.bulk_save(batch)
-
-            if next_checkpoint:
-                self.state.set_state(state_key, next_checkpoint)
-                logger.info(
-                    "Checkpoint saved for %s: %s",
-                    entity_type,
-                    next_checkpoint,
-                )
+        self._run_pipeline(
+            extract_func=self.extractor.extract_genres,
+            state_key=GENRE_STATE_KEY,
+            index=self.settings.elastic_genres_index,
+            entity_name="genre",
+        )
 
 
 def get_checkpoint_state(

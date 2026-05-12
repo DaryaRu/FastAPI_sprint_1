@@ -20,7 +20,8 @@ def main() -> None:
     extractor = PostgresExtractor(settings)
     writer = ElasticsearchWriter(settings)
 
-    writer.check_or_create_index()
+    for index_name, schema in settings.elastic_map.items():
+        writer.check_or_create_index(index_name, schema)
 
     orchestrator = EtlOrchestrator(settings, state, extractor, writer)
     orchestrator.run_forever()
