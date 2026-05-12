@@ -5,18 +5,12 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 
 from schemas.film import Film
+from schemas.film_short import FilmShort
 from services.film import FilmService, get_film_service
 
 router = APIRouter()
-
-
-class FilmShort(BaseModel):
-    uuid: UUID
-    title: str
-    imdb_rating: Optional[float] = None
 
 
 def convert_to_short(films: list[Film]) -> list[FilmShort]:
