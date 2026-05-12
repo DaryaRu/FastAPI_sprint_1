@@ -3,29 +3,33 @@
 from typing import Optional
 from uuid import UUID
 
-from elasticsearch import AsyncElasticsearch, NotFoundError
+from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 from redis.asyncio import Redis
 
 from db.elastic import get_elastic
 from db.redis import get_redis
+from exceptions import ObjectNotFoundException
+from repositories.film import FilmRepository
 from schemas.film import Film
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 
 class FilmService:
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
+    def __init__(self, redis: Redis, repository: FilmRepository):
         self.redis = redis
-        self.elastic = elastic
+        self.repository = repository
 
     async def get_by_id(self, film_id: str) -> Optional[Film]:
         """Return a film by id (using cache when available)."""
         film = await self._film_from_cache(film_id)
         if not film:
-            film = await self._get_film_from_elastic(film_id)
-            if not film:
+            try:
+                data = await self.repository.get_by_id(film_id)
+            except ObjectNotFoundException:
                 return None
+            film = Film(**data)
             await self._put_film_to_cache(film)
         return film
 
@@ -37,7 +41,7 @@ class FilmService:
         page_size: int,
     ) -> list[Film]:
         """Return a paginated list of films (with sort and genre filter)."""
-        query: dict = {"match_all": {}}
+        query: dict | None = None
         if genre:
             query = {
                 "nested": {
@@ -46,19 +50,19 @@ class FilmService:
                 }
             }
 
-        body: dict = {
-            "query": query,
-            "from": (page_number - 1) * page_size,
-            "size": page_size,
-        }
-
+        sort_param: dict | None = None
         if sort:
             order = "desc" if sort.startswith("-") else "asc"
             field = sort.lstrip("-")
-            body["sort"] = [{field: {"order": order}}]
+            sort_param = {field: {"order": order}}
 
-        result = await self.elastic.search(index="movies", body=body)
-        return [Film(**hit["_source"]) for hit in result["hits"]["hits"]]
+        data = await self.repository.get_filtered(
+            sort=sort_param,
+            query=query,
+            page_number=page_number,
+            page_size=page_size,
+        )
+        return [Film(**item) for item in data]
 
     async def search(
         self,
@@ -67,26 +71,12 @@ class FilmService:
         page_size: int,
     ) -> list[Film]:
         """Search films by query string for title and description fields."""
-        body = {
-            "query": {
-                "multi_match": {
-                    "query": query,
-                    "fields": ["title", "description"],
-                }
-            },
-            "from": (page_number - 1) * page_size,
-            "size": page_size,
-        }
-        result = await self.elastic.search(index="movies", body=body)
-        return [Film(**hit["_source"]) for hit in result["hits"]["hits"]]
-
-    async def _get_film_from_elastic(self, film_id: str) -> Optional[Film]:
-        """Return a single film document from Elasticsearch by id."""
-        try:
-            doc = await self.elastic.get(index="movies", id=film_id)
-        except NotFoundError:
-            return None
-        return Film(**doc["_source"])
+        data = await self.repository.search_films(
+            query_str=query,
+            page_number=page_number,
+            page_size=page_size,
+        )
+        return [Film(**item) for item in data]
 
     async def _film_from_cache(self, film_id: str) -> Optional[Film]:
         """Return a film from Redis cache, or None if not cached."""
@@ -109,4 +99,5 @@ def get_film_service(
     elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> FilmService:
     """FastAPI dependency that returns a FilmService instance."""
-    return FilmService(redis, elastic)
+    repository = FilmRepository(elastic, index="movies")
+    return FilmService(redis, repository)
