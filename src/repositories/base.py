@@ -1,0 +1,47 @@
+from elasticsearch import AsyncElasticsearch, NotFoundError
+
+from exceptions import ObjectNotFoundException
+
+
+class BaseElacticRepository:
+    
+    def __init__(self, elastic_client: AsyncElasticsearch, index: str):
+        self.elastic_client = elastic_client
+        self.index = index
+        
+    async def get_by_id(self, id: str, source: list[str] | None = None,) -> dict:
+        try:
+            doc = await self.elastic_client.get(index=self.index, id=id, source_includes=source)
+        except NotFoundError as ex:
+            raise ObjectNotFoundException from ex
+        return doc['_source']
+    
+    async def get_filtered(
+        self,
+        page_size: int | None = None,
+        page_number: int | None = None,
+        query: dict | None = None,
+        sort: dict | None = None,
+        source: list[str] | None = None,
+    ) -> list[dict]:
+        body = {
+            "query": query or {"match_all": {}},
+        }
+        if source:
+            body["_source"] = source
+        if page_size and page_number:
+            body["from"] = (page_number - 1) * page_size
+            body["size"] = page_size
+
+        if sort:
+            body["sort"] = [sort]
+
+        result = await self.elastic_client.search(
+            index=self.index,
+            body=body,
+        )
+
+        return [
+            hit["_source"]
+            for hit in result["hits"]["hits"]
+        ]
