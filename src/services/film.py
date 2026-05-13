@@ -11,7 +11,7 @@ from db.elastic import get_elastic
 from db.redis import get_redis
 from exceptions import ObjectNotFoundException
 from models.films import Film
-from repositories.film import FilmRepository
+from repositories.films import FilmRepository
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 

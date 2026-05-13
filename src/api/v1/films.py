@@ -6,8 +6,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from schemas.films import FilmResponse
 from schemas.film_shorts import FilmShortResponse
+from schemas.films import FilmResponse
 from services.film import FilmService, get_film_service
 
 router = APIRouter()

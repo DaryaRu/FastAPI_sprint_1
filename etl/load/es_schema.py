@@ -167,5 +167,5 @@ GENRE_INDEX_SCHEMA = {
                 "fields": {"raw": {"type": "keyword"}},
             },
         },
-    }
+    },
 }

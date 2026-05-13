@@ -8,7 +8,7 @@ from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from api.v1 import films
+from api.v1 import films, genres, persons
 from core import config
 from db import elastic, redis
 
@@ -45,3 +45,6 @@ app.add_middleware(
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=config.ALLOW_HOSTS)
 
 app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
+
+app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
+app.include_router(persons.router, prefix="/api/v1/persons", tags=["persons"])

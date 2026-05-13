@@ -2,10 +2,9 @@
 
 from pathlib import Path
 
+from load.es_schema import GENRE_INDEX_SCHEMA, MOVIES_INDEX_SCHEMA
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from load.es_schema import GENRE_INDEX_SCHEMA, MOVIES_INDEX_SCHEMA
 
 
 class Settings(BaseSettings):
@@ -42,7 +41,7 @@ class Settings(BaseSettings):
             f"host={self.postgres_host} "
             f"port={self.postgres_port}"
         )
-        
+
     @property
     def elastic_map(self) -> dict:
         return {
