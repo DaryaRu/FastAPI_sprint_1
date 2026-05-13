@@ -8,6 +8,11 @@ from pydantic import BaseModel, Field
 class Person(BaseModel):
     id: UUID
     name: str
+    
+    
+class Genre(BaseModel):
+    id: UUID
+    name: str
 
 
 class Genre(BaseModel):

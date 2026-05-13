@@ -91,3 +91,12 @@ JOIN content.person AS p ON p.id = pfw.person_id
 WHERE pfw.film_work_id = ANY(%(film_work_ids)s)
 ORDER BY pfw.film_work_id, pfw.role, p.full_name;
 """
+
+GENRE_DETAILS = """
+SELECT
+    id,
+    name
+FROM content.genre
+WHERE id = ANY(%(genre_ids)s)
+ORDER BY id;
+"""

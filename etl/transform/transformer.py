@@ -28,6 +28,10 @@ def build_film_work(
     return result
 
 
+def build_genre(row: dict) -> Genre:
+    return Genre(**row)
+
+
 def group_genres_by_film(rows: list[dict]) -> dict:
     """Group genres by film_work_id."""
     grouped_genres: dict = {}

@@ -3,6 +3,7 @@
 import logging
 
 from elasticsearch import Elasticsearch, helpers
+from pydantic import BaseModel
 
 from backoff import backoff
 from config import Settings
@@ -13,43 +14,55 @@ logger = logging.getLogger(__name__)
 
 
 class ElasticsearchWriter:
-    """Write ETL docs to Elasticsearch index."""
-
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.client = Elasticsearch(hosts=[settings.elastic_host])
 
     @backoff()
-    def check_or_create_index(self) -> None:
-        """Create Elasticsearch index if it does not exist yet."""
-        if self.client.indices.exists(index=self.settings.elastic_index):
+    def check_or_create_index(
+        self,
+        index: str,
+        schema: dict,
+    ) -> None:
+        if self.client.indices.exists(index=index):
             logger.info(
                 "Elasticsearch index %s already exists",
-                self.settings.elastic_index,
+                index,
             )
             return
 
         self.client.indices.create(
-            index=self.settings.elastic_index,
-            body=MOVIES_INDEX_SCHEMA,
+            index=index,
+            body=schema,
         )
+
         logger.info(
-            "Created Elasticsearch index %s", self.settings.elastic_index
+            "Created Elasticsearch index %s",
+            index,
         )
 
     @backoff()
-    def bulk_save(self, film_works: list[FilmWork]) -> None:
-        """Load a batch of film work docs into Elasticsearch."""
-        if not film_works:
+    def bulk_save(
+        self,
+        index: str,
+        documents: list[BaseModel],
+    ) -> None:
+        if not documents:
             return
 
         actions = [
             {
-                "_index": self.settings.elastic_index,
-                "_id": str(film_work.id),
-                "_source": film_work.model_dump(mode="json"),
+                "_index": index,
+                "_id": str(document.id),
+                "_source": document.model_dump(mode="json"),
             }
-            for film_work in film_works
+            for document in documents
         ]
+
         helpers.bulk(self.client, actions)
-        logger.info("Uploaded %s film works to Elasticsearch", len(film_works))
+
+        logger.info(
+            "Uploaded %s documents to index %s",
+            len(documents),
+            index,
+        )

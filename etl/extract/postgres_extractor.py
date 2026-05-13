@@ -19,11 +19,13 @@ from extract.queries import (
     FILM_WORK_IDS_BY_PERSON,
     FILM_WORK_IDS_BY_SELF,
     FILM_WORK_PERSONS,
+    GENRE_DETAILS,
     query_changed_entities,
 )
-from models import FilmWork
+from models import FilmWork, Genre
 from transform.transformer import (
     build_film_work,
+    build_genre,
     group_genres_by_film,
     group_persons_by_film,
 )
@@ -135,8 +137,34 @@ class PostgresExtractor:
             for row in film_rows
         ]
         return result
+    
+    @backoff()
+    def fetch_genres(
+        self,
+        genre_ids: list[UUID],
+    ) -> list[Genre]:
+        """Fetch genres by ids."""
 
-    def extract(
+        if not genre_ids:
+            return []
+
+        with closing(
+            psycopg.connect(
+                self.settings.postgres_dsn,
+                row_factory=dict_row,
+            )
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    GENRE_DETAILS,
+                    {"genre_ids": genre_ids},
+                )
+
+                rows = cursor.fetchall()
+
+        return [build_genre(row) for row in rows]
+
+    def extract_film_works(
         self, entity_type: EntityType, checkpoint_state: CheckpointState
     ) -> tuple[list[FilmWork], CheckpointState]:
         """Run the full data extraction cycle for one entity type."""
@@ -156,6 +184,30 @@ class PostgresExtractor:
         )
         result = (film_works, checkpoint)
         return result
+    
+    def extract_genres(
+        self,
+        checkpoint_state: CheckpointState,
+    ) -> tuple[list[Genre], CheckpointState]:
+        """Extract changed genres."""
+
+        rows = self.fetch_changed_entities(
+            ENTITY_TYPE_GENRE,
+            checkpoint_state,
+        )
+
+        if not rows:
+            return [], checkpoint_state
+
+        genre_ids = [row["id"] for row in rows]
+        genres = self.fetch_genres(genre_ids)
+        checkpoint = build_checkpoint_state(rows[-1])
+        logger.info(
+            "Fetched %s genres from PostgreSQL",
+            len(genres),
+        )
+
+        return genres, checkpoint
 
 
 def iter_batches(
