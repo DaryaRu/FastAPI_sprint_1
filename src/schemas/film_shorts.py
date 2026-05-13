@@ -3,10 +3,10 @@
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-class FilmShort(BaseModel):
-    uuid: UUID
+class FilmShortResponse(BaseModel):
+    uuid: UUID = Field(validation_alias="id")
     title: str
     imdb_rating: Optional[float] = None

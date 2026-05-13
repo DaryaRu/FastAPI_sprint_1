@@ -10,8 +10,8 @@ from redis.asyncio import Redis
 from db.elastic import get_elastic
 from db.redis import get_redis
 from exceptions import ObjectNotFoundException
+from models.films import Film
 from repositories.film import FilmRepository
-from schemas.film import Film
 
 FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
@@ -62,7 +62,7 @@ class FilmService:
             page_number=page_number,
             page_size=page_size,
         )
-        return [Film(**item) for item in data]
+        return self._convert_to_films(data)
 
     async def search(
         self,
@@ -76,6 +76,10 @@ class FilmService:
             page_number=page_number,
             page_size=page_size,
         )
+        return self._convert_to_films(data)
+
+    def _convert_to_films(self, data: list[dict]) -> list[Film]:
+        """Convert a list of raw dicts to Film objects."""
         return [Film(**item) for item in data]
 
     async def _film_from_cache(self, film_id: str) -> Optional[Film]:
@@ -88,7 +92,7 @@ class FilmService:
     async def _put_film_to_cache(self, film: Film):
         """Store a film in Redis cache."""
         await self.redis.set(
-            str(film.uuid),
+            str(film.id),
             film.model_dump_json(),
             ex=FILM_CACHE_EXPIRE_IN_SECONDS,
         )
