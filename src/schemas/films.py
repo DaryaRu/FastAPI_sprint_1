@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from schemas.genres import GenreBaseSerializer as Genre
+from schemas.genres import GenreResponse
 from schemas.persons import PersonResponse
 
 
@@ -19,5 +19,5 @@ class FilmResponse(BaseModel):
     directors: list[PersonResponse] = []
     actors: list[PersonResponse] = []
     writers: list[PersonResponse] = []
-    genre: list[Genre] = Field(default=[], validation_alias="genres")
+    genre: list[GenreResponse] = Field(default=[], validation_alias="genres")
     file_path: Optional[str] = None
