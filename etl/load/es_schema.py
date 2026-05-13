@@ -44,7 +44,18 @@ MOVIES_INDEX_SCHEMA = {
         "properties": {
             "id": {"type": "keyword"},
             "imdb_rating": {"type": "float"},
-            "genres": {"type": "keyword"},
+            "genres": {
+                "type": "nested",
+                "dynamic": "strict",
+                "properties": {
+                    "id": {"type": "keyword"},
+                    "name": {
+                        "type": "text",
+                        "analyzer": "ru_en",
+                        "fields": {"raw": {"type": "keyword"}},
+                    },
+                },
+            },
             "title": {
                 "type": "text",
                 "analyzer": "ru_en",

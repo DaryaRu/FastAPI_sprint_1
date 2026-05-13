@@ -71,6 +71,7 @@ ORDER BY fw.modified, fw.id;
 FILM_WORK_GENRES = """
 SELECT
     gfw.film_work_id,
+    g.id,
     g.name
 FROM content.genre_film_work AS gfw
 JOIN content.genre AS g ON g.id = gfw.genre_id
