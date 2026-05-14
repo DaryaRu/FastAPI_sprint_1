@@ -2,10 +2,13 @@
 
 from pathlib import Path
 
+from load.es_schema import (
+    GENRE_INDEX_SCHEMA,
+    MOVIES_INDEX_SCHEMA,
+    PERSON_INDEX_SCHEMA,
+)
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from load.es_schema import GENRE_INDEX_SCHEMA, MOVIES_INDEX_SCHEMA
 
 
 class Settings(BaseSettings):
@@ -18,9 +21,15 @@ class Settings(BaseSettings):
     postgres_port: int = Field(default=5432, alias="POSTGRES_PORT")
 
     elastic_host: str = Field(alias="ELASTIC_HOST")
-    elastic_movies_index: str = Field(default="movies", alias="ELASTIC_MOVIES_INDEX")
-    elastic_genres_index: str = Field(default="genres", alias="ELASTIC_GENRES_INDEX")
-
+    elastic_movies_index: str = Field(
+        default="movies", alias="ELASTIC_MOVIES_INDEX"
+    )
+    elastic_genres_index: str = Field(
+        default="genres", alias="ELASTIC_GENRES_INDEX"
+    )
+    elastic_persons_index: str = Field(
+        default="persons", alias="ELASTIC_PERSONS_INDEX"
+    )
     state_file: Path = Field(default=Path("./state.json"), alias="STATE_FILE")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     etl_chunk_size: int = Field(default=100, alias="ETL_CHUNK_SIZE")
@@ -42,10 +51,11 @@ class Settings(BaseSettings):
             f"host={self.postgres_host} "
             f"port={self.postgres_port}"
         )
-        
+
     @property
     def elastic_map(self) -> dict:
         return {
             self.elastic_movies_index: MOVIES_INDEX_SCHEMA,
             self.elastic_genres_index: GENRE_INDEX_SCHEMA,
+            self.elastic_persons_index: PERSON_INDEX_SCHEMA,
         }

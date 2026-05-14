@@ -26,6 +26,7 @@ FILM_WORK_STATE_KEYS = {
 }
 
 GENRE_STATE_KEY = "genre_etl:genre_modified"
+PERSON_STATE_KEY = "person_etl:person_modified"
 
 
 class EtlOrchestrator:
@@ -48,7 +49,7 @@ class EtlOrchestrator:
         while True:
             self.run_once()
             time.sleep(self.settings.etl_poll_interval)
-            
+
     def _run_pipeline(
         self,
         *,
@@ -89,12 +90,18 @@ class EtlOrchestrator:
                 index=self.settings.elastic_movies_index,
                 entity_name=entity_type,
             )
-
         self._run_pipeline(
             extract_func=self.extractor.extract_genres,
             state_key=GENRE_STATE_KEY,
             index=self.settings.elastic_genres_index,
             entity_name="genre",
+        )
+
+        self._run_pipeline(
+            extract_func=self.extractor.extract_persons,
+            state_key=PERSON_STATE_KEY,
+            index=self.settings.elastic_persons_index,
+            entity_name="person",
         )
 
 

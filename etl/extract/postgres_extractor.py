@@ -8,8 +8,6 @@ from typing import Literal, TypedDict
 from uuid import UUID
 
 import psycopg
-from psycopg.rows import dict_row
-
 from backoff import backoff
 from config import Settings
 from extract.queries import (
@@ -20,15 +18,19 @@ from extract.queries import (
     FILM_WORK_IDS_BY_SELF,
     FILM_WORK_PERSONS,
     GENRE_DETAILS,
+    PERSON_DETAILS,
     query_changed_entities,
 )
-from models import FilmWork, Genre
+from psycopg.rows import dict_row
 from transform.transformer import (
     build_film_work,
     build_genre,
+    build_persons_from_rows,
     group_genres_by_film,
     group_persons_by_film,
 )
+
+from models import FilmWork, Genre, Person
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +139,7 @@ class PostgresExtractor:
             for row in film_rows
         ]
         return result
-    
+
     @backoff()
     def fetch_genres(
         self,
@@ -164,6 +166,54 @@ class PostgresExtractor:
 
         return [build_genre(row) for row in rows]
 
+    @backoff()
+    def fetch_persons(
+        self,
+        person_ids: list[UUID],
+    ) -> list[dict]:
+        """Fetch persons data by ids from Postgres."""
+        if not person_ids:
+            return []
+
+        with closing(
+            psycopg.connect(
+                self.settings.postgres_dsn,
+                row_factory=dict_row,
+            )
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    PERSON_DETAILS,
+                    {"person_ids": person_ids},
+                )
+                rows = cursor.fetchall()
+
+        return list(rows)
+
+    def extract_persons(
+        self,
+        checkpoint_state: CheckpointState,
+    ) -> tuple[list[Person], CheckpointState]:
+        """Extract changed persons."""
+        rows = self.fetch_changed_entities(
+            ENTITY_TYPE_PERSON,
+            checkpoint_state,
+        )
+
+        if not rows:
+            return [], checkpoint_state
+
+        person_ids = [row["id"] for row in rows]
+
+        raw_person_rows = self.fetch_persons(person_ids)
+
+        persons = build_persons_from_rows(raw_person_rows)
+
+        checkpoint = build_checkpoint_state(rows[-1])
+        logger.info("Fetched %s persons from PostgreSQL", len(persons))
+
+        return persons, checkpoint
+
     def extract_film_works(
         self, entity_type: EntityType, checkpoint_state: CheckpointState
     ) -> tuple[list[FilmWork], CheckpointState]:
@@ -184,7 +234,7 @@ class PostgresExtractor:
         )
         result = (film_works, checkpoint)
         return result
-    
+
     def extract_genres(
         self,
         checkpoint_state: CheckpointState,
