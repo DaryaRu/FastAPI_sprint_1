@@ -23,3 +23,6 @@ class PersonShort(BaseModel):
 
     uuid: UUID = Field(validation_alias="id")
     full_name: str = Field(validation_alias="name")
+
+
+PersonResponse = Person

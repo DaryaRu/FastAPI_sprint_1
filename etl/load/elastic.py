@@ -5,10 +5,8 @@ import logging
 from backoff import backoff
 from config import Settings
 from elasticsearch import Elasticsearch, helpers
-from load.es_schema import MOVIES_INDEX_SCHEMA
 from pydantic import BaseModel
 
-from models import FilmWork
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from schemas.genres import GenreResponse
-from schemas.persons import PersonResponse
+from schemas.persons import PersonShort
 
 
 class FilmResponse(BaseModel):
@@ -16,8 +16,8 @@ class FilmResponse(BaseModel):
     imdb_rating: float | None = None
     description: Optional[str] = None
     creation_date: Optional[date] = None
-    directors: list[PersonResponse] = []
-    actors: list[PersonResponse] = []
-    writers: list[PersonResponse] = []
+    directors: list[PersonShort] = []
+    actors: list[PersonShort] = []
+    writers: list[PersonShort] = []
     genre: list[GenreResponse] = Field(default=[], validation_alias="genres")
     file_path: Optional[str] = None

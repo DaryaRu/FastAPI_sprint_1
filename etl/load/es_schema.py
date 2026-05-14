@@ -170,7 +170,6 @@ GENRE_INDEX_SCHEMA = {
     },
 }
 
-
 PERSON_INDEX_SCHEMA = {
     "settings": {
         "refresh_interval": "1s",
