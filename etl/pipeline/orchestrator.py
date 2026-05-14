@@ -4,12 +4,16 @@ import logging
 import time
 
 from config import Settings
-from extract.postgres_extractor import (DEFAULT_ID_VALUE,
-                                        DEFAULT_MODIFIED_VALUE,
-                                        ENTITY_TYPE_FILM_WORK,
-                                        ENTITY_TYPE_GENRE, ENTITY_TYPE_PERSON,
-                                        CheckpointState, PostgresExtractor,
-                                        iter_batches)
+from extract.postgres_extractor import (
+    DEFAULT_ID_VALUE,
+    DEFAULT_MODIFIED_VALUE,
+    ENTITY_TYPE_FILM_WORK,
+    ENTITY_TYPE_GENRE,
+    ENTITY_TYPE_PERSON,
+    CheckpointState,
+    PostgresExtractor,
+    iter_batches,
+)
 from load.elastic import ElasticsearchWriter
 from state.state import State
 
@@ -54,7 +58,9 @@ class EtlOrchestrator:
         index: str,
         entity_name: str,
     ) -> None:
-        checkpoint_state = get_checkpoint_state(self.state.get_state(state_key))
+        checkpoint_state = get_checkpoint_state(
+            self.state.get_state(state_key)
+        )
 
         items, next_checkpoint = extract_func(checkpoint_state)
 

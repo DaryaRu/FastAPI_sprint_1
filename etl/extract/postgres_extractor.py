@@ -10,15 +10,25 @@ from uuid import UUID
 import psycopg
 from backoff import backoff
 from config import Settings
-from extract.queries import (FILM_WORK_DETAILS, FILM_WORK_GENRES,
-                             FILM_WORK_IDS_BY_GENRE, FILM_WORK_IDS_BY_PERSON,
-                             FILM_WORK_IDS_BY_SELF, FILM_WORK_PERSONS,
-                             GENRE_DETAILS, PERSON_DETAILS,
-                             query_changed_entities)
+from extract.queries import (
+    FILM_WORK_DETAILS,
+    FILM_WORK_GENRES,
+    FILM_WORK_IDS_BY_GENRE,
+    FILM_WORK_IDS_BY_PERSON,
+    FILM_WORK_IDS_BY_SELF,
+    FILM_WORK_PERSONS,
+    GENRE_DETAILS,
+    PERSON_DETAILS,
+    query_changed_entities,
+)
 from psycopg.rows import dict_row
-from transform.transformer import (build_film_work, build_genre, build_person,
-                                   build_persons_from_rows,
-                                   group_genres_by_film, group_persons_by_film)
+from transform.transformer import (
+    build_film_work,
+    build_genre,
+    build_persons_from_rows,
+    group_genres_by_film,
+    group_persons_by_film,
+)
 
 from models import FilmWork, Genre, Person
 
@@ -100,13 +110,19 @@ class PostgresExtractor:
             psycopg.connect(self.settings.postgres_dsn, row_factory=dict_row)
         ) as connection:
             with connection.cursor() as cursor:
-                cursor.execute(FILM_WORK_DETAILS, {"film_work_ids": film_work_ids})
+                cursor.execute(
+                    FILM_WORK_DETAILS, {"film_work_ids": film_work_ids}
+                )
                 film_rows = list(cursor.fetchall())
 
-                cursor.execute(FILM_WORK_GENRES, {"film_work_ids": film_work_ids})
+                cursor.execute(
+                    FILM_WORK_GENRES, {"film_work_ids": film_work_ids}
+                )
                 genre_rows = list(cursor.fetchall())
 
-                cursor.execute(FILM_WORK_PERSONS, {"film_work_ids": film_work_ids})
+                cursor.execute(
+                    FILM_WORK_PERSONS, {"film_work_ids": film_work_ids}
+                )
                 person_rows = list(cursor.fetchall())
 
         genres_by_film = group_genres_by_film(genre_rows)
@@ -244,7 +260,9 @@ class PostgresExtractor:
         return genres, checkpoint
 
 
-def iter_batches(items: list[FilmWork], batch_size: int) -> Iterator[list[FilmWork]]:
+def iter_batches(
+    items: list[FilmWork], batch_size: int
+) -> Iterator[list[FilmWork]]:
     """Split items into fixed-size batches."""
 
     for index in range(0, len(items), batch_size):

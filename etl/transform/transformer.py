@@ -56,11 +56,14 @@ def build_persons_from_rows(rows: list[dict]) -> list[Person]:
         if row["fw_id"]:
             role = row["role"]
             film_id = (
-                row["fw_id"] if isinstance(row["fw_id"], UUID) else UUID(row["fw_id"])
+                row["fw_id"]
+                if isinstance(row["fw_id"], UUID)
+                else UUID(row["fw_id"])
             )
 
             existing_film = next(
-                (f for f in persons_data[p_id]["films"] if f["id"] == film_id), None
+                (f for f in persons_data[p_id]["films"] if f["id"] == film_id),
+                None,
             )
 
             if existing_film:
@@ -72,10 +75,6 @@ def build_persons_from_rows(rows: list[dict]) -> list[Person]:
                 )
 
     return [build_person(data) for data in persons_data.values()]
-
-
-def build_genre(row: dict) -> Genre:
-    return Genre(**row)
 
 
 def group_genres_by_film(rows: list[dict]) -> dict:
@@ -105,7 +104,9 @@ def group_persons_by_film(rows: list[dict]) -> dict:
         )
         role = row["role"]
 
-        person_id = row["id"] if isinstance(row["id"], UUID) else UUID(row["id"])
+        person_id = (
+            row["id"] if isinstance(row["id"], UUID) else UUID(row["id"])
+        )
         person = FilmPerson(id=person_id, name=row["full_name"])
 
         if role == "director":

@@ -103,7 +103,7 @@ ORDER BY id;
 
 # Return person details and their films with roles for person index
 PERSON_DETAILS = """
-SELECT 
+SELECT
     p.id as person_id,
     p.full_name,
     pfw.film_work_id as fw_id,
