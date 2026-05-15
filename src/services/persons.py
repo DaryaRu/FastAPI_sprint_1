@@ -1,6 +1,5 @@
 """Person business logic service module."""
 
-from typing import List, Optional
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
@@ -26,7 +25,7 @@ class PersonService:
             elastic_client=elastic, index="movies"
         )
 
-    async def get_by_uuid(self, person_uuid: UUID) -> Optional[PersonModel]:
+    async def get_by_uuid(self, person_uuid: UUID) -> PersonModel | None:
         """Get person details by their unique identifier."""
         try:
             doc_source = await self.person_repo.get_by_id(str(person_uuid))
@@ -35,8 +34,8 @@ class PersonService:
             return None
 
     async def get_list(
-        self, page_size: int, page_number: int, query: Optional[str] = None
-    ) -> List[PersonModel]:
+        self, page_size: int, page_number: int, query: str | None = None
+    ) -> list[PersonModel]:
         """Get a full-text searched or paginated list of persons."""
         if query:
             docs_sources = await self.person_repo.search_persons(
@@ -52,7 +51,7 @@ class PersonService:
 
     async def get_person_films(
         self, person_uuid: UUID
-    ) -> Optional[List[FilmShort]]:
+    ) -> list[FilmShort] | None:
         """
         Get all films associated with a specific
         person via nested queries.

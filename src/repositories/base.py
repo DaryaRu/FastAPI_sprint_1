@@ -6,7 +6,10 @@ from exceptions import ObjectNotFoundException
 
 
 class BaseElasticRepository:
+    """Base repository for Elasticsearch operations."""
+
     def __init__(self, elastic_client: AsyncElasticsearch, index: str):
+        """Initialize with an Elasticsearch client and index name."""
         self.elastic_client = elastic_client
         self.index = index
 
@@ -15,6 +18,7 @@ class BaseElasticRepository:
         entity_id: str,
         source: list[str] | None = None,
     ) -> dict:
+        """Fetch a single document by id."""
         try:
             doc = await self.elastic_client.get(
                 index=self.index,
@@ -33,6 +37,7 @@ class BaseElasticRepository:
         sort: dict | None = None,
         source: list[str] | None = None,
     ) -> list[dict]:
+        """Search documents with optional query, sort, and pagination."""
         body = {
             "query": query or {"match_all": {}},
         }

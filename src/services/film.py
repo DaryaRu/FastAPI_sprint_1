@@ -18,6 +18,7 @@ FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 class FilmService:
     def __init__(self, redis: Redis, repository: FilmRepository):
+        """Initialize service with Redis cache and film repository."""
         self.redis = redis
         self.repository = repository
 

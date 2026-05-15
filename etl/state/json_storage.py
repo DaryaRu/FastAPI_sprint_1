@@ -1,3 +1,5 @@
+"""ETL state storage based on JSON file."""
+
 import json
 from pathlib import Path
 from typing import Any, Dict
@@ -9,6 +11,7 @@ class JsonFileStorage(BaseStorage):
     """Store ETL state in a local JSON file."""
 
     def __init__(self, file_path: Path) -> None:
+        """Initialize storage."""
         self.file_path = file_path
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
 

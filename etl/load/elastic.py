@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class ElasticsearchWriter:
+    """Write ETL documents to Elasticsearch."""
+
     def __init__(self, settings: Settings) -> None:
+        """Initialize writer with a Elasticsearch client."""
         self.settings = settings
         self.client = Elasticsearch(hosts=[settings.elastic_host])
 
@@ -22,6 +25,7 @@ class ElasticsearchWriter:
         index: str,
         schema: dict,
     ) -> None:
+        """Create index with given schema if it does not exist."""
         if self.client.indices.exists(index=index):
             logger.info(
                 "Elasticsearch index %s already exists",
@@ -45,6 +49,7 @@ class ElasticsearchWriter:
         index: str,
         documents: list[BaseModel],
     ) -> None:
+        """Index documents batch into Elasticsearch."""
         if not documents:
             return
 

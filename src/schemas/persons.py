@@ -1,4 +1,5 @@
-from typing import List
+"""Person models for API responses."""
+
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -7,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class PersonFilmResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     uuid: UUID = Field(validation_alias="id")
-    roles: List[str]
+    roles: list[str]
 
 
 class Person(BaseModel):
@@ -15,7 +16,7 @@ class Person(BaseModel):
 
     uuid: UUID = Field(validation_alias="id")
     full_name: str = Field(validation_alias="name")
-    films: List[PersonFilmResponse]
+    films: list[PersonFilmResponse]
 
 
 class PersonShort(BaseModel):
