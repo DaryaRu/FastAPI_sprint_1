@@ -8,7 +8,9 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_cache.decorator import cache
 
+from core import config
 from schemas.genres import GenreResponse as Genre
 from services.genres import GenreService, get_genre_service
 
@@ -18,6 +20,7 @@ router = APIRouter()
 @router.get(
     "/", response_model=list[Genre], summary="Получить список всех жанров"
 )
+@cache(expire=config.CACHE_EXPIRE)
 async def genre_list(
     sort: str | None = Query(
         None,
