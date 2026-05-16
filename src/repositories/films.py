@@ -9,8 +9,8 @@ class FilmRepository(BaseElasticRepository):
     async def search_films(
         self,
         query_str: str,
-        page_number: int = 1,
-        page_size: int = 50,
+        page_number: int,
+        page_size: int,
     ) -> list[dict]:
         """Search films by query string across title and description fields."""
         query = {
