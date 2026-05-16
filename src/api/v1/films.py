@@ -5,7 +5,9 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_cache.decorator import cache
 
+from core import config
 from schemas.film_shorts import FilmShortResponse
 from schemas.films import FilmResponse
 from services.film import FilmService, get_film_service
@@ -14,6 +16,7 @@ router = APIRouter()
 
 
 @router.get("/search", response_model=list[FilmShortResponse])
+@cache(expire=config.CACHE_EXPIRE)
 async def films_search(
     query: str = Query(...),
     page_number: int = Query(default=1, ge=1),
@@ -41,6 +44,7 @@ async def film_details(
 
 
 @router.get("/", response_model=list[FilmShortResponse])
+@cache(expire=config.CACHE_EXPIRE)
 async def films_list(
     sort: Optional[str] = Query(default=None),
     genre: Optional[UUID] = Query(default=None),

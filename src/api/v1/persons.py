@@ -8,7 +8,9 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_cache.decorator import cache
 
+from core import config
 from schemas.film_shorts import FilmShortResponse as FilmShort
 from schemas.persons import Person
 from services.persons import PersonService, get_person_service
@@ -21,6 +23,7 @@ router = APIRouter()
     response_model=list[Person],
     summary="Полнотекстовый поиск по персонам",
 )
+@cache(expire=config.CACHE_EXPIRE)
 async def person_search(
     query: str = Query(..., description="Имя для поиска"),
     page_size: int = Query(50, ge=1, le=100),
@@ -56,6 +59,7 @@ async def person_details(
     response_model=list[FilmShort],
     summary="Получить все фильмы заданной персоны",
 )
+@cache(expire=config.CACHE_EXPIRE)
 async def person_films(
     person_uuid: UUID,
     person_service: PersonService = Depends(get_person_service),
@@ -72,6 +76,7 @@ async def person_films(
 @router.get(
     "/", response_model=list[Person], summary="Получить список всех персон"
 )
+@cache(expire=config.CACHE_EXPIRE)
 async def person_list(
     page_size: int = Query(50, ge=1, le=100),
     page_number: int = Query(1, ge=1),
