@@ -5,34 +5,25 @@ from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
-from redis.asyncio import Redis
 
 from db.elastic import get_elastic
-from db.redis import get_redis
 from exceptions import ObjectNotFoundException
 from models.films import Film
 from repositories.films import FilmRepository
 
-FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
-
 
 class FilmService:
-    def __init__(self, redis: Redis, repository: FilmRepository):
-        """Initialize service with Redis cache and film repository."""
-        self.redis = redis
+    def __init__(self, repository: FilmRepository):
+        """Initialize service with film repository."""
         self.repository = repository
 
     async def get_by_id(self, film_id: str) -> Optional[Film]:
-        """Return a film by id (using cache when available)."""
-        film = await self._film_from_cache(film_id)
-        if not film:
-            try:
-                data = await self.repository.get_by_id(film_id)
-            except ObjectNotFoundException:
-                return None
-            film = Film(**data)
-            await self._put_film_to_cache(film)
-        return film
+        """Return a film by id."""
+        try:
+            data = await self.repository.get_by_id(film_id)
+        except ObjectNotFoundException:
+            return None
+        return Film(**data)
 
     async def get_list(
         self,
@@ -83,26 +74,10 @@ class FilmService:
         """Convert a list of raw dicts to Film objects."""
         return [Film(**item) for item in data]
 
-    async def _film_from_cache(self, film_id: str) -> Optional[Film]:
-        """Return a film from Redis cache, or None if not cached."""
-        data = await self.redis.get(film_id)
-        if not data:
-            return None
-        return Film.model_validate_json(data)
-
-    async def _put_film_to_cache(self, film: Film):
-        """Store a film in Redis cache."""
-        await self.redis.set(
-            str(film.id),
-            film.model_dump_json(),
-            ex=FILM_CACHE_EXPIRE_IN_SECONDS,
-        )
-
 
 def get_film_service(
-    redis: Redis = Depends(get_redis),
     elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> FilmService:
     """FastAPI dependency that returns a FilmService instance."""
     repository = FilmRepository(elastic, index="movies")
-    return FilmService(redis, repository)
+    return FilmService(repository)

@@ -1,11 +1,7 @@
-"""Redis client and FastAPI dependency provider."""
+"""Redis client module."""
 
 from typing import Optional
 
 from redis.asyncio import Redis
 
 redis: Optional[Redis] = None
-
-
-async def get_redis() -> Redis:
-    return redis

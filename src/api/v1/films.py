@@ -29,6 +29,7 @@ async def films_search(
 
 
 @router.get("/{film_id}", response_model=FilmResponse)
+@cache(expire=config.CACHE_EXPIRE)
 async def film_details(
     film_id: UUID,
     film_service: FilmService = Depends(get_film_service),
