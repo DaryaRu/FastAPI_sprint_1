@@ -1,10 +1,13 @@
+import hashlib
 import logging
 import time
 from contextlib import asynccontextmanager
 from logging import config as logging_config
+from typing import Any, Callable, Dict, Optional, Tuple
+from urllib.parse import parse_qsl, urlencode, urlparse
 
 from elasticsearch import AsyncElasticsearch
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import ORJSONResponse
@@ -21,10 +24,32 @@ from db import elastic, redis
 logging_config.dictConfig(logger.LOGGING)
 
 
+def key_builder(
+    func: Callable[..., Any],
+    namespace: str = "",
+    *,
+    request: Optional[Request] = None,
+    response: Optional[Response] = None,
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+) -> str:
+    url = str(request.url) if request else ""
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    sorted_query = urlencode(sorted(query.items()))
+    normalized = f"{parsed.path}?{sorted_query}"
+    cache_key = hashlib.md5(normalized.encode()).hexdigest()
+    return f"{namespace}:{cache_key}"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     redis.redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
-    FastAPICache.init(RedisBackend(redis.redis), prefix="fastapi-cache")
+    FastAPICache.init(
+        RedisBackend(redis.redis),
+        prefix="fastapi-cache",
+        key_builder=key_builder
+    )
     logging.info("FastAPI cache initialized")
     elastic.es = AsyncElasticsearch(
         hosts=[f"http://{config.ELASTIC_HOST}:{config.ELASTIC_PORT}"]
@@ -71,6 +96,5 @@ app.add_middleware(
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=config.ALLOW_HOSTS)
 
 app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
-
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
 app.include_router(persons.router, prefix="/api/v1/persons", tags=["persons"])
