@@ -66,7 +66,7 @@ async def film_details(
 @cache(expire=config.CACHE_EXPIRE)
 async def films_list(
     sort: Optional[str] = Query(default=None),
-    genre: Optional[UUID] = Query(default=None),
+    genre: Optional[UUID] = Query(default=None, alias="filter[genre]"),
     page_number: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
     film_service: FilmService = Depends(get_film_service),
