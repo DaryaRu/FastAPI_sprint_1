@@ -13,14 +13,11 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import ORJSONResponse
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 from redis.asyncio import Redis
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from api.v1 import films, genres, persons
 from core import config
-from core import logger
 from core import logger
 from db import elastic, redis
 
@@ -51,7 +48,7 @@ async def lifespan(app: FastAPI):
     FastAPICache.init(
         RedisBackend(redis.redis),
         prefix="fastapi-cache",
-        key_builder=key_builder
+        key_builder=key_builder,
     )
     logging.info("FastAPI cache initialized")
     elastic.es = AsyncElasticsearch(
@@ -74,22 +71,6 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=lifespan,
 )
-
-
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    """Middleware для измерения времени выполнения запроса"""
-    start_time = time.perf_counter()
-    response = await call_next(request)
-    process_time = time.perf_counter() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    logging.info(
-        f"Request: {request.method} {request.url.path} "
-        f"Completed in {process_time:.4f} seconds "
-        f"Status: {response.status_code}"
-    )
-    return response
-
 
 
 @app.middleware("http")
