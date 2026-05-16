@@ -65,10 +65,15 @@ async def person_details(
 @cache(expire=config.CACHE_EXPIRE)
 async def person_films(
     person_uuid: UUID,
+    pagination: PaginationParams = Depends(PaginationParams),
     person_service: PersonService = Depends(get_person_service),
 ) -> list[FilmShort]:
     """Get all films associated with a specific person."""
-    films = await person_service.get_person_films(person_uuid)
+    films = await person_service.get_person_films(
+        person_uuid,
+        page_size=pagination.page_size,
+        page_number=pagination.page_number,
+    )
     if films is None:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="person not found"

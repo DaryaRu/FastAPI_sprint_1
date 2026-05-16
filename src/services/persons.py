@@ -51,7 +51,10 @@ class PersonService:
         return [PersonModel(**source) for source in docs_sources]
 
     async def get_person_films(
-        self, person_uuid: UUID
+        self,
+        person_uuid: UUID,
+        page_size: int,
+        page_number: int,
     ) -> list[FilmShort] | None:
         """
         Get all films associated with a specific
@@ -91,7 +94,7 @@ class PersonService:
         }
 
         movies_sources = await self.movie_repo.get_filtered(
-            page_size=500, page_number=1, query=movie_query
+            page_size=page_size, page_number=page_number, query=movie_query
         )
 
         result = []
