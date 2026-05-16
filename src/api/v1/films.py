@@ -15,7 +15,13 @@ from services.film import FilmService, get_film_service
 router = APIRouter()
 
 
-@router.get("/search", response_model=list[FilmShortResponse])
+@router.get(
+    "/search",
+    response_model=list[FilmShortResponse],
+    summary="Полнотекстовый поиск кинопроизведений",
+    description="Полнотекстовый поиск по кинопроизведениям",
+    response_description="Название и рейтинг фильма",
+)
 @cache(expire=config.CACHE_EXPIRE)
 async def films_search(
     query: str = Query(...),
@@ -28,7 +34,13 @@ async def films_search(
     return [FilmShortResponse.model_validate(f.model_dump()) for f in films]
 
 
-@router.get("/{film_id}", response_model=FilmResponse)
+@router.get(
+    "/{film_id}",
+    response_model=FilmResponse,
+    summary="Получить кинопроизведение по UUID",
+    description="Возвращает полную информацию о кинопроизведении по UUID",
+    response_description="Полная информация о фильме",
+)
 @cache(expire=config.CACHE_EXPIRE)
 async def film_details(
     film_id: UUID,
@@ -44,7 +56,13 @@ async def film_details(
     return FilmResponse.model_validate(film.model_dump())
 
 
-@router.get("/", response_model=list[FilmShortResponse])
+@router.get(
+    "/",
+    response_model=list[FilmShortResponse],
+    summary="Список кинопроизведений",
+    description="Список кинопроизведений с сортировкой и фильтром по жанру",
+    response_description="Название и рейтинг фильма",
+)
 @cache(expire=config.CACHE_EXPIRE)
 async def films_list(
     sort: Optional[str] = Query(default=None),
