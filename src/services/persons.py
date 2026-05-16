@@ -5,6 +5,7 @@ from uuid import UUID
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 
+from core import config
 from db.elastic import get_elastic
 from exceptions import ObjectNotFoundException
 from models.persons import Person as PersonModel
@@ -19,10 +20,10 @@ class PersonService:
     def __init__(self, elastic: AsyncElasticsearch):
         """Initialize service with specialized repositories."""
         self.person_repo = PersonsRepository(
-            elastic_client=elastic, index="persons"
+            elastic_client=elastic, index=config.ELASTIC_PERSON_INDEX
         )
         self.movie_repo = FilmRepository(
-            elastic_client=elastic, index="movies"
+            elastic_client=elastic, index=config.ELASTIC_FILM_INDEX
         )
 
     async def get_by_uuid(self, person_uuid: UUID) -> PersonModel | None:
