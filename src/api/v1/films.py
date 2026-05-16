@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_cache.decorator import cache
 
+from api.v1.dependencies import PaginationParams
 from core import config
 from schemas.film_shorts import FilmShortResponse
 from schemas.films import FilmResponse
@@ -25,12 +26,13 @@ router = APIRouter()
 @cache(expire=config.CACHE_EXPIRE)
 async def films_search(
     query: str = Query(...),
-    page_number: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=100),
+    pagination: PaginationParams = Depends(PaginationParams),
     film_service: FilmService = Depends(get_film_service),
 ) -> list[FilmShortResponse]:
     """Endpoint to search films by query string."""
-    films = await film_service.search(query, page_number, page_size)
+    films = await film_service.search(
+        query, pagination.page_number, pagination.page_size
+    )
     return [FilmShortResponse.model_validate(f.model_dump()) for f in films]
 
 
@@ -67,11 +69,12 @@ async def film_details(
 async def films_list(
     sort: Optional[str] = Query(default=None),
     genre: Optional[UUID] = Query(default=None, alias="filter[genre]"),
-    page_number: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=100),
+    pagination: PaginationParams = Depends(PaginationParams),
     film_service: FilmService = Depends(get_film_service),
 ) -> list[FilmShortResponse]:
     """Endpoint to return a paginated list of films
     with sort and genre filter."""
-    films = await film_service.get_list(sort, genre, page_number, page_size)
+    films = await film_service.get_list(
+        sort, genre, pagination.page_number, pagination.page_size
+    )
     return [FilmShortResponse.model_validate(f.model_dump()) for f in films]

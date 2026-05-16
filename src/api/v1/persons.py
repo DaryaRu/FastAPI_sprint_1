@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_cache.decorator import cache
 
+from api.v1.dependencies import PaginationParams
 from core import config
 from schemas.film_shorts import FilmShortResponse as FilmShort
 from schemas.persons import Person
@@ -26,13 +27,14 @@ router = APIRouter()
 @cache(expire=config.CACHE_EXPIRE)
 async def person_search(
     query: str = Query(..., description="Имя для поиска"),
-    page_size: int = Query(50, ge=1, le=100),
-    page_number: int = Query(1, ge=1),
+    pagination: PaginationParams = Depends(PaginationParams),
     person_service: PersonService = Depends(get_person_service),
 ) -> list[Person]:
     """Perform a full-text search for persons by name."""
     return await person_service.get_list(
-        page_size=page_size, page_number=page_number, query=query
+        page_size=pagination.page_size,
+        page_number=pagination.page_number,
+        query=query,
     )
 
 
@@ -79,11 +81,12 @@ async def person_films(
 )
 @cache(expire=config.CACHE_EXPIRE)
 async def person_list(
-    page_size: int = Query(50, ge=1, le=100),
-    page_number: int = Query(1, ge=1),
+    pagination: PaginationParams = Depends(PaginationParams),
     person_service: PersonService = Depends(get_person_service),
 ) -> list[Person]:
     """Get a paginated list of all persons."""
     return await person_service.get_list(
-        page_size=page_size, page_number=page_number, query=None
+        page_size=pagination.page_size,
+        page_number=pagination.page_number,
+        query=None,
     )
