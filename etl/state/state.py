@@ -1,3 +1,5 @@
+"""State manager."""
+
 from typing import Any
 
 from state.base import BaseStorage
@@ -7,6 +9,7 @@ class State:
     """Keep a copy of state and sync it with storage."""
 
     def __init__(self, storage: BaseStorage) -> None:
+        """Initialize state manager and load existing state from storage."""
         self.storage = storage
         self.state = storage.retrieve_state()
 

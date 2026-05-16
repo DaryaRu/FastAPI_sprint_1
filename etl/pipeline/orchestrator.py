@@ -39,6 +39,7 @@ class EtlOrchestrator:
         extractor: PostgresExtractor,
         writer: ElasticsearchWriter,
     ) -> None:
+        """Initialize with settings, state, extractor, and writer."""
         self.settings = settings
         self.state = state
         self.extractor = extractor
@@ -58,6 +59,7 @@ class EtlOrchestrator:
         index: str,
         entity_name: str,
     ) -> None:
+        """Run one cycle for a entity type and index."""
         checkpoint_state = get_checkpoint_state(
             self.state.get_state(state_key)
         )

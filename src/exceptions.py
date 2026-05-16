@@ -1,3 +1,6 @@
+"""Exception classes for service-layer error handling."""
+
+
 class ServiceException(Exception):
     detail = "Неожиданная ошибка"
 

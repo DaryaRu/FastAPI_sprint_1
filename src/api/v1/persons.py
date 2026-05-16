@@ -41,6 +41,7 @@ async def person_search(
     response_model=Person,
     summary="Получить персону по UUID",
 )
+@cache(expire=config.CACHE_EXPIRE)
 async def person_details(
     person_uuid: UUID,
     person_service: PersonService = Depends(get_person_service),

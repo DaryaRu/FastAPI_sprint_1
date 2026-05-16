@@ -4,12 +4,15 @@ from repositories.base import BaseElasticRepository
 
 
 class GenresRepository(BaseElasticRepository):
+    """Elasticsearch repository for genre documents."""
+
     async def get_sorted_genres(
         self,
         page_number: int,
         page_size: int,
         sort_str: str | None = None,
     ) -> list[dict]:
+        """Return a paginated and sorted list of genre documents."""
         if sort_str:
             order = "desc" if sort_str.startswith("-") else "asc"
             clean_field = sort_str.lstrip("-")

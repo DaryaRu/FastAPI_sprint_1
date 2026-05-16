@@ -1,4 +1,5 @@
-from typing import List
+"""Internal person models."""
+
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -6,10 +7,10 @@ from pydantic import BaseModel
 
 class PersonFilmShort(BaseModel):
     id: UUID
-    roles: List[str]
+    roles: list[str]
 
 
 class Person(BaseModel):
     id: UUID
     name: str
-    films: List[PersonFilmShort] = []
+    films: list[PersonFilmShort] = []

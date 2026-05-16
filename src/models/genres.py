@@ -1,3 +1,5 @@
+"""Internal genre model."""
+
 from pydantic import BaseModel
 
 

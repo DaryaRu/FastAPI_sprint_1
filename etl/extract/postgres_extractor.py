@@ -54,6 +54,7 @@ class PostgresExtractor:
     """Extract data from PostgreSQL."""
 
     def __init__(self, settings: Settings) -> None:
+        """Initialize extractor with app settings."""
         self.settings = settings
 
     @backoff()

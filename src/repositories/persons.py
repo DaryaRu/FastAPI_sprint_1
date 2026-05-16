@@ -4,12 +4,15 @@ from repositories.base import BaseElasticRepository
 
 
 class PersonsRepository(BaseElasticRepository):
+    """Elasticsearch repository for person documents."""
+
     async def search_persons(
         self,
         query_str: str,
         page_number: int = 1,
         page_size: int = 50,
     ) -> list[dict]:
+        """Search persons by name with fuzzy matching."""
         query = {"match": {"name": {"query": query_str, "fuzziness": "AUTO"}}}
         return await self.get_filtered(
             query=query,
