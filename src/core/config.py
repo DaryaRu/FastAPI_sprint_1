@@ -26,3 +26,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ALLOW_HOSTS = [h for h in os.getenv("ALLOW_HOSTS", "").split(",") if h]
 ORIGINS = [o for o in os.getenv("ORIGINS", "").split(",") if o]
 CACHE_EXPIRE = int(os.getenv("CACHE_EXPIRE", 600))
+PAGINATION_DEFAULT_PAGE_SIZE = int(
+    os.getenv("PAGINATION_DEFAULT_PAGE_SIZE", 50)
+)
+PAGINATION_MAX_PAGE_SIZE = int(os.getenv("PAGINATION_MAX_PAGE_SIZE", 100))

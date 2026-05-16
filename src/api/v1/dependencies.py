@@ -2,6 +2,8 @@
 
 from fastapi import Query
 
+from core import config
+
 
 class PaginationParams:
     """Pagination parameters for endpoints."""
@@ -9,7 +11,11 @@ class PaginationParams:
     def __init__(
         self,
         page_number: int = Query(default=1, ge=1),
-        page_size: int = Query(default=50, ge=1, le=100),
+        page_size: int = Query(
+            default=config.PAGINATION_DEFAULT_PAGE_SIZE,
+            ge=1,
+            le=config.PAGINATION_MAX_PAGE_SIZE,
+        ),
     ):
         self.page_number = page_number
         self.page_size = page_size
