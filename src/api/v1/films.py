@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_cache.decorator import cache
 
-from api.v1.dependencies import PaginationParams
+from api.v1.dependencies import PaginationDepend
 from core import config
 from schemas.film_shorts import FilmShortResponse
 from schemas.films import FilmResponse
@@ -25,9 +25,9 @@ router = APIRouter()
 )
 @cache(expire=config.CACHE_EXPIRE)
 async def films_search(
-    query: str = Query(...),
-    pagination: PaginationParams = Depends(PaginationParams),
+    pagination: PaginationDepend,
     film_service: FilmService = Depends(get_film_service),
+    query: str = Query(...),
 ) -> list[FilmShortResponse]:
     """Endpoint to search films by query string."""
     films = await film_service.search(
@@ -67,10 +67,10 @@ async def film_details(
 )
 @cache(expire=config.CACHE_EXPIRE)
 async def films_list(
+    pagination: PaginationDepend,
+    film_service: FilmService = Depends(get_film_service),
     sort: Optional[str] = Query(default=None),
     genre: Optional[UUID] = Query(default=None, alias="filter[genre]"),
-    pagination: PaginationParams = Depends(PaginationParams),
-    film_service: FilmService = Depends(get_film_service),
 ) -> list[FilmShortResponse]:
     """Endpoint to return a paginated list of films
     with sort and genre filter."""

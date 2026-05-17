@@ -1,6 +1,8 @@
 """Dependencies for API."""
 
-from fastapi import Query
+from typing import Annotated
+
+from fastapi import Depends, Query
 
 from core import config
 
@@ -19,3 +21,6 @@ class PaginationParams:
     ):
         self.page_number = page_number
         self.page_size = page_size
+
+
+PaginationDepend = Annotated[PaginationParams, Depends(PaginationParams)]
