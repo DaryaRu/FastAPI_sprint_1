@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_cache.decorator import cache
 
+from api.v1.dependencies import PaginationParams
 from core import config
 from schemas.genres import GenreResponse as Genre
 from services.genres import GenreService, get_genre_service
@@ -26,13 +27,14 @@ async def genre_list(
         None,
         description="Сортировка по имени по алфавиту (name и -name)",
     ),
-    page_size: int = Query(50, ge=1, le=100),
-    page_number: int = Query(1, ge=1),
+    pagination: PaginationParams = Depends(PaginationParams),
     genre_service: GenreService = Depends(get_genre_service),
 ) -> list[Genre]:
     """Get a paginated list of genres with optional sorting."""
     return await genre_service.get_list(
-        page_size=page_size, page_number=page_number, sort=sort
+        page_size=pagination.page_size,
+        page_number=pagination.page_number,
+        sort=sort,
     )
 
 

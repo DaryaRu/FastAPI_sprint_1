@@ -5,6 +5,7 @@ from uuid import UUID
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 
+from core import config
 from db.elastic import get_elastic
 from exceptions import ObjectNotFoundException
 from models.persons import Person as PersonModel
@@ -19,10 +20,10 @@ class PersonService:
     def __init__(self, elastic: AsyncElasticsearch):
         """Initialize service with specialized repositories."""
         self.person_repo = PersonsRepository(
-            elastic_client=elastic, index="persons"
+            elastic_client=elastic, index=config.ELASTIC_PERSON_INDEX
         )
         self.movie_repo = FilmRepository(
-            elastic_client=elastic, index="movies"
+            elastic_client=elastic, index=config.ELASTIC_FILM_INDEX
         )
 
     async def get_by_uuid(self, person_uuid: UUID) -> PersonModel | None:
@@ -50,7 +51,10 @@ class PersonService:
         return [PersonModel(**source) for source in docs_sources]
 
     async def get_person_films(
-        self, person_uuid: UUID
+        self,
+        person_uuid: UUID,
+        page_size: int,
+        page_number: int,
     ) -> list[FilmShort] | None:
         """
         Get all films associated with a specific
@@ -90,7 +94,7 @@ class PersonService:
         }
 
         movies_sources = await self.movie_repo.get_filtered(
-            page_size=500, page_number=1, query=movie_query
+            page_size=page_size, page_number=page_number, query=movie_query
         )
 
         result = []

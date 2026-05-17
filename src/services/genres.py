@@ -5,6 +5,7 @@ from uuid import UUID
 from elasticsearch import AsyncElasticsearch
 from fastapi import Depends
 
+from core import config
 from db.elastic import get_elastic
 from exceptions import ObjectNotFoundException
 from models.genres import Genre
@@ -17,7 +18,7 @@ class GenreService:
     def __init__(self, elastic: AsyncElasticsearch):
         """Initialize service with specialized genre repository."""
         self.genre_repo = GenresRepository(
-            elastic_client=elastic, index="genres"
+            elastic_client=elastic, index=config.ELASTIC_GENRE_INDEX
         )
 
     async def get_by_uuid(self, genre_uuid: UUID) -> Genre | None:

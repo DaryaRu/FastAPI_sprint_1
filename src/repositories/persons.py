@@ -9,8 +9,8 @@ class PersonsRepository(BaseElasticRepository):
     async def search_persons(
         self,
         query_str: str,
-        page_number: int = 1,
-        page_size: int = 50,
+        page_number: int,
+        page_size: int,
     ) -> list[dict]:
         """Search persons by name with fuzzy matching."""
         query = {"match": {"name": {"query": query_str, "fuzziness": "AUTO"}}}
