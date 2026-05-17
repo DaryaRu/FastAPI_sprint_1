@@ -17,14 +17,12 @@ from schemas.film_shorts import FilmShortResponse as FilmShort
 class PersonService:
     """Service class for managing person-related business logic."""
 
-    def __init__(self, elastic: AsyncElasticsearch):
+    def __init__(
+        self, person_repo: PersonsRepository, movie_repo: FilmRepository
+    ):
         """Initialize service with specialized repositories."""
-        self.person_repo = PersonsRepository(
-            elastic_client=elastic, index=config.ELASTIC_PERSON_INDEX
-        )
-        self.movie_repo = FilmRepository(
-            elastic_client=elastic, index=config.ELASTIC_FILM_INDEX
-        )
+        self.person_repo = person_repo
+        self.movie_repo = movie_repo
 
     async def get_by_uuid(self, person_uuid: UUID) -> PersonModel | None:
         """Get person details by their unique identifier."""
@@ -35,7 +33,10 @@ class PersonService:
             return None
 
     async def get_list(
-        self, page_size: int, page_number: int, query: str | None = None
+        self,
+        page_size: int,
+        page_number: int,
+        query: str | None = None,
     ) -> list[PersonModel]:
         """Get a full-text searched or paginated list of persons."""
         if query:
@@ -57,8 +58,7 @@ class PersonService:
         page_number: int,
     ) -> list[FilmShort] | None:
         """
-        Get all films associated with a specific
-        person via nested queries.
+        Get all films associated with a specific person via nested queries.
         """
         person = await self.get_by_uuid(person_uuid)
         if not person:
@@ -103,7 +103,6 @@ class PersonService:
             if actual_id:
                 source["id"] = actual_id
                 source["uuid"] = actual_id
-
             result.append(FilmShort(**source))
         return result
 
@@ -112,4 +111,10 @@ def get_person_service(
     elastic: AsyncElasticsearch = Depends(get_elastic),
 ) -> PersonService:
     """Dependency provider for PersonService instantiation."""
-    return PersonService(elastic)
+    person_repo = PersonsRepository(
+        elastic_client=elastic, index=config.ELASTIC_PERSON_INDEX
+    )
+    movie_repo = FilmRepository(
+        elastic_client=elastic, index=config.ELASTIC_FILM_INDEX
+    )
+    return PersonService(person_repo=person_repo, movie_repo=movie_repo)
